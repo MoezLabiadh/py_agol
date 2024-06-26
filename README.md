@@ -1,1 +1,1 @@
-Recipes and scripts for extracting data fron bcgov Arcgis online
+Recipes and scripts for extracting data from bcgov Arcgis online
