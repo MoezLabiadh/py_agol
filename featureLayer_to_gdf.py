@@ -3,6 +3,7 @@ import requests
 import configparser
 import pandas as pd
 import geopandas as gpd
+from shapely.geometry import shape, Point
 
 def read_config(config_file):
     """Reads the configuration file without interpolation."""
@@ -37,56 +38,49 @@ def query_feature_layer(ACCOUNT_ID, FEATURE_LAYER, token):
     
     return response.json()
 
-def features_to_geodataframe(features):
-    # Extract features from the JSON response
-    features_list = features['features']
-    
-    # Create a list to store the data
+def features_to_geodataframe(features_json):
+    """Converts features JSON to a GeoDataFrame."""
+    features = features_json['features']
     data = []
-    
-    for feature in features_list:
+    for feature in features:
         attributes = feature['attributes']
-        geometry = feature['geometry']
-        
-        # Convert the geometry to WKT format
-        if 'rings' in geometry:  # Polygon
-            wkt_geom = f"POLYGON({','.join([' '.join([f'{x} {y}' for x, y in ring]) for ring in geometry['rings']])})"
-        elif 'paths' in geometry:  # LineString
-            wkt_geom = f"LINESTRING({','.join([f'{x} {y}' for x, y in geometry['paths'][0]])})"
-        elif 'points' in geometry:  # MultiPoint
-            wkt_geom = f"MULTIPOINT({','.join([f'{x} {y}' for x, y in geometry['points']])})"
-        else:  # Point
-            wkt_geom = f"POINT({geometry['x']} {geometry['y']})"
-        
-        attributes['geometry'] = wkt_geom
+        geometry = feature.get('geometry')
+        if geometry:
+            if 'x' in geometry and 'y' in geometry:
+                geom = Point(geometry['x'], geometry['y'])
+            else:
+                geom = shape(geometry)
+            attributes['geometry'] = geom
+        else:
+            attributes['geometry'] = None
         data.append(attributes)
     
-    # Create a DataFrame
     df = pd.DataFrame(data)
-    
-    # Convert to GeoDataFrame
-    gdf = gpd.GeoDataFrame(df, geometry=gpd.GeoSeries.from_wkt(df['geometry']), crs='EPSG:4326')
+    gdf = gpd.GeoDataFrame(df, geometry='geometry')
     
     return gdf
 
+
 if __name__ == "__main__":
-    # Read Creadiantials
+    # User credentials and feature layer ID
     script_dir = os.path.dirname(os.path.abspath(__file__))
     config_path = os.path.join(script_dir, 'config.ini')
     config = read_config(config_path)
     
+    print('Reading configuration from file')
     TOKEN_URL = config.get('ago', 'token_url')
     HOST = config.get('ago', 'host')
     USERNAME = config.get('ago', 'username')
     PASSWORD = config.get('ago', 'password')
     ACCOUNT_ID = config.get('ago', 'account_id')
     
-    # Get token
+
+    print('Getting AGOL Token')
     token = get_token(TOKEN_URL, HOST, USERNAME, PASSWORD)
     
+    print('Retrieving data from AGOL')
     FEATURE_LAYER = "TEST_data_CWD_no_private_info"
     features = query_feature_layer(ACCOUNT_ID, FEATURE_LAYER, token)
     
-    # Convert features to GeoDataFrame
+    print('Converting data to geodataframe')
     gdf = features_to_geodataframe(features)
-    
