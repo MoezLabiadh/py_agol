@@ -70,7 +70,7 @@ def features_to_geodataframe(features):
     return gdf
 
 if __name__ == "__main__":
-    # User credentials and feature layer ID
+    # Read Creadiantials
     script_dir = os.path.dirname(os.path.abspath(__file__))
     config_path = os.path.join(script_dir, 'config.ini')
     config = read_config(config_path)
