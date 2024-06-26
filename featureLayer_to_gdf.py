@@ -9,7 +9,9 @@ def read_config(config_file):
     """Reads the configuration file without interpolation."""
     config = configparser.ConfigParser(interpolation=None)
     config.read(config_file)
+    
     return config
+
 
 def get_token(TOKEN_URL, HOST, USERNAME, PASSWORD):
     params = {
@@ -18,9 +20,12 @@ def get_token(TOKEN_URL, HOST, USERNAME, PASSWORD):
         'referer': HOST,
         'f': 'json'
     }
-    response = requests.post(TOKEN_URL, data=params)
+    #response = requests.post(TOKEN_URL, data=params, verify=False) #without SSL verification
+    response = requests.post(TOKEN_URL, data=params, verify=True)  #with SSL verification
     response.raise_for_status()  
+    
     return response.json().get('token')
+
 
 def query_feature_layer(ACCOUNT_ID, FEATURE_LAYER, token):
     query_url = f"https://services6.arcgis.com/{ACCOUNT_ID}/arcgis/rest/services/{FEATURE_LAYER}/FeatureServer/0/query"
@@ -33,10 +38,12 @@ def query_feature_layer(ACCOUNT_ID, FEATURE_LAYER, token):
         'f': 'json',
         'token': token
     }
-    response = requests.get(query_url, params=query_params)
+    #response = requests.get(query_url, params=query_params, verify=False) #without SSL verification
+    response = requests.get(query_url, params=query_params, verify=True)   #with SSL verification
     response.raise_for_status()  # Raise an exception for HTTP errors
     
     return response.json()
+
 
 def features_to_geodataframe(features_json):
     """Converts features JSON to a GeoDataFrame."""
@@ -59,6 +66,7 @@ def features_to_geodataframe(features_json):
     gdf = gpd.GeoDataFrame(df, geometry='geometry')
     
     return gdf
+
 
 
 if __name__ == "__main__":
@@ -84,3 +92,5 @@ if __name__ == "__main__":
     
     print('Converting data to geodataframe')
     gdf = features_to_geodataframe(features)
+
+    print (gdf.head())
