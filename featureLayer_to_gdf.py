@@ -27,8 +27,9 @@ def get_token(TOKEN_URL, HOST, USERNAME, PASSWORD):
     return response.json().get('token')
 
 
-def query_feature_layer(ACCOUNT_ID, FEATURE_LAYER, token):
-    query_url = f"https://services6.arcgis.com/{ACCOUNT_ID}/arcgis/rest/services/{FEATURE_LAYER}/FeatureServer/0/query"
+def query_feature_layer(ACCOUNT_ID, FEATURE_SERVICE, LYR_INDEX, token):
+    """Returns data from AGO layer based on query """
+    query_url = f"https://services6.arcgis.com/{ACCOUNT_ID}/arcgis/rest/services/{FEATURE_SERVICE}/FeatureServer/{LYR_INDEX}/query"
     query_params = {
         'where': '1=1',  # Return all features
         'outFields': '*',  # Return all fields
@@ -38,12 +39,11 @@ def query_feature_layer(ACCOUNT_ID, FEATURE_LAYER, token):
         'f': 'json',
         'token': token
     }
-    #response = requests.get(query_url, params=query_params, verify=False) #without SSL verification
-    response = requests.get(query_url, params=query_params, verify=True)   #with SSL verification
+    response = requests.get(query_url, params=query_params, verify=False) #without SSL verification
+    #response = requests.get(query_url, params=query_params, verify=True)   #with SSL verification
     response.raise_for_status()  # Raise an exception for HTTP errors
     
     return response.json()
-
 
 def features_to_geodataframe(features_json):
     """Converts features JSON to a GeoDataFrame."""
@@ -87,8 +87,9 @@ if __name__ == "__main__":
     token = get_token(TOKEN_URL, HOST, USERNAME, PASSWORD)
     
     print('Retrieving data from AGOL')
-    FEATURE_LAYER = "TEST_data_CWD_no_private_info"
-    features = query_feature_layer(ACCOUNT_ID, FEATURE_LAYER, token)
+    FEATURE_SERVICE = "TEST_data_CWD_no_private_info"
+    LYR_INDEX= 0
+    features = query_feature_layer(ACCOUNT_ID, FEATURE_SERVICE, LYR_INDEX, token)
     
     print('Converting data to geodataframe')
     gdf = features_to_geodataframe(features)
