@@ -3,7 +3,7 @@ import requests
 import configparser
 import pandas as pd
 import geopandas as gpd
-from shapely.geometry import shape, Point
+from shapely import geometry
 
 def read_config(config_file):
     """Reads the configuration file without interpolation."""
@@ -45,25 +45,40 @@ def query_feature_layer(ACCOUNT_ID, FEATURE_SERVICE, LYR_INDEX, token):
     
     return response.json()
 
-def features_to_geodataframe(features_json):
-    """Converts features JSON to a GeoDataFrame."""
-    features = features_json['features']
+def features_to_geodataframe(features):
+    features_list = features['features']
     data = []
-    for feature in features:
+    
+    for feature in features_list:
         attributes = feature['attributes']
-        geometry = feature.get('geometry')
-        if geometry:
-            if 'x' in geometry and 'y' in geometry:
-                geom = Point(geometry['x'], geometry['y'])
-            else:
-                geom = shape(geometry)
-            attributes['geometry'] = geom
+        geom = feature['geometry']
+        
+        # Convert ESRI JSON to GeoJSON
+        if 'rings' in geom:
+            geom_type = "Polygon"
+            coordinates = geom['rings']
+        elif 'paths' in geom:
+            geom_type = "LineString"
+            coordinates = geom['paths'][0]
+        elif 'points' in geom:
+            geom_type = "MultiPoint"
+            coordinates = geom['points']
         else:
-            attributes['geometry'] = None
+            geom_type = "Point"
+            coordinates = [geom['x'], geom['y']]
+        
+        geojson = {
+            "type": geom_type,
+            "coordinates": coordinates
+        }
+        
+        # Create Shapely geometry from GeoJSON
+        shape = geometry.shape(geojson)
+        
+        attributes['geometry'] = shape
         data.append(attributes)
     
-    df = pd.DataFrame(data)
-    gdf = gpd.GeoDataFrame(df, geometry='geometry')
+    gdf = gpd.GeoDataFrame(data, geometry='geometry', crs=4326)
     
     return gdf
 
