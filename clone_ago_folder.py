@@ -6,10 +6,8 @@ from arcgis.gis import GIS
 # connect to your org
 gis = GIS(
     'https://governmentofbc.maps.arcgis.com', 
-    #'PX.GeoBC.DSS.Creator', 
-    #'maps_are_gr8!', 
-    'MLABIADH.BC',
-    'MoezLab88',
+    'XXX',
+    'XXX',
     verify_cert=False
 ) 
 
