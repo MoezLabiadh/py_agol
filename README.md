@@ -1,1 +1,1 @@
-Recipes and scripts for extracting data from bcgov Arcgis online
+Recipes and scripts for working with the ArcGIS Online API for Python
